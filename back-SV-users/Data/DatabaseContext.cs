@@ -9,5 +9,11 @@ namespace back_SV_users.Data
         }
 
         public DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<User>().ToTable("user", schema: "innovatech");
+        }
+
     }
 }

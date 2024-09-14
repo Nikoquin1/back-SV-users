@@ -1,44 +1,54 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using back_SV_users.Data;
+using back_SV_users;
+using System.Linq;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
-namespace back_SV_users.Controllers
+[ApiController]
+[Route("[controller]")]
+public class UsersController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AcessoController : ControllerBase
+    private readonly DatabaseContext _context;
+
+    public UsersController(DatabaseContext context)
     {
-        // GET: api/<ValuesController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        _context = context;
+    }
+
+    // Endpoint para listar todos los usuarios
+    [HttpGet]
+    public IActionResult GetUsers()
+    {
+        var users = _context.Users.ToList();
+        return Ok(users);
+    }
+
+    // Endpoint para agregar un usuario de prueba
+
+ 
+    [HttpPost]
+    public IActionResult AddUser()
+    {
+        var user = new User
         {
-            return new string[] { "value1", "value2" };
+            Id_card = 100,
+            Name = "Test User",
+            Email = "test@example.com",
+            Password = "password123"
+        };
+
+        try
+        {
+            _context.Users.Add(user);
+            _context.SaveChanges();
+            return Ok("Usuario agregado correctamente");
         }
-
-        // GET api/<ValuesController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        catch (Exception ex)
         {
-            return "value";
-        }
-
-        // POST api/<ValuesController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<ValuesController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<ValuesController>/5
-        [HttpDelete("{id}")]
-
-        public void Delete(int id)
-        {
+            Console.WriteLine($"Error: {ex.Message}");
+            return StatusCode(500, "Error al guardar el usuario.");
         }
     }
+
 }
+
+
