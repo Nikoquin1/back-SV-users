@@ -1,0 +1,6 @@
+@back_SV_users_HostAddress = http://localhost:5293
+
+GET {{back_SV_users_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
