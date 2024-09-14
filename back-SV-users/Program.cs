@@ -1,10 +1,15 @@
-using back_SV_users.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Custom;
+using Models;
+using back_SV_users.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Agregar servicios al contenedor.
-builder.Services.AddControllers(); // En versiones anteriores de .NET, se llamaba ConfigureServices
+// Add services to the container.
+builder.Services.AddControllers();
 
 // Configurar Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -22,26 +27,54 @@ builder.Services.AddCors(options =>
         });
 });
 
-// Obtener la cadena de conexión desde el archivo de configuración
+// Get connection string from configuration file
 var connectionString = builder.Configuration
     .GetConnectionString("ConnectionString")
-    ?? throw new ArgumentNullException("Dont have connection");
+    ?? throw new ArgumentNullException("No connection string found");
 
-// Imprimir la cadena de conexión para verificar que se esté leyendo correctamente
+// Print the connection string to verify that it is being read correctly.
 Console.WriteLine($"Connection String: {connectionString}");
 
-// Añadir el servicio DbContext con la conexión PostgreSQL
+// Adding DbContext service with PostgreSQL connection
 builder.Services.AddDbContext<DatabaseContext>(options =>
 {
     options.UseNpgsql(connectionString)
-           .EnableSensitiveDataLogging()  // Activa logging detallado
-           .LogTo(Console.WriteLine);     // Muestra los logs en la consola
+           .EnableSensitiveDataLogging()  // Detailed active record
+           .LogTo(Console.WriteLine);     // Display logs in the console
 });
 
+builder.Services.AddSingleton<Utilities>();
+
+// Validate JWT Key
+var key = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(key))
+{
+    throw new Exception("JWT Key is not set correctly in the configuration.");
+}
+
+// Configurar Autenticación con JWT
+builder.Services.AddAuthentication(config =>
+{
+    config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    config.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(config =>
+{
+    config.RequireHttpsMetadata = false;
+    config.SaveToken = true;
+    config.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+    };
+});
 
 var app = builder.Build();
 
-// Configurar el pipeline de manejo de solicitudes HTTP.
+// Configure the HTTP request handling pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -50,9 +83,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Aplicar la política de CORS
+// Implement CORS policy
 app.UseCors("AllowAllOrigins");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -5,15 +5,36 @@ namespace back_SV_users.Data
 {
     public class DatabaseContext : DbContext
     {
-        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
-        {
-        }
+        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<Client> Clients { get; set; }
+        public DbSet<Entrepreneurship> Entrepreneurships { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<User>().ToTable("user", schema: "innovatech");
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("user", schema: "innovatech");
+                entity.Property(u => u.Name)
+                      .IsRequired() // Marca el campo como obligatorio
+                      .HasMaxLength(100); // Define un tamaño máximo si es necesario
+
+                entity.Property(u => u.Email)
+                      .IsRequired()
+                      .HasMaxLength(100);
+
+                entity.Property(u => u.Password)
+                      .IsRequired();
+
+                entity.Property(u => u.RoleId)
+                      .IsRequired();
+            });
+
+            modelBuilder.Entity<Role>().ToTable("role", schema: "innovatech");
+            modelBuilder.Entity<Client>().ToTable("client", schema: "innovatech");
+            modelBuilder.Entity<Entrepreneurship>().ToTable("entrepreneurship", schema: "innovatech");
         }
 
     }

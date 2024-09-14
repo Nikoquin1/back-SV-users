@@ -20,11 +20,20 @@ namespace Models
 
         [Required]
         [Column("email")]
-        [EmailAddress] // Valida formato de email
+        [EmailAddress] // Validate email format
         public string Email { get; set; }
 
         [Required]
         [Column("password")]
         public string Password { get; set; }
+
+        // Foreign key to Role
+        [Required]
+        [ForeignKey("Role")]
+        [Column("id_rol")]
+        public int RoleId { get; set; }
+
+        // Navigation property to Role
+        //public required Role Role { get; set; }
     }
 }
