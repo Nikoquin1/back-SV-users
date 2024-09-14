@@ -36,7 +36,8 @@ namespace back_SV_users.Controllers
 
         // DELETE api/<ValuesController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)x
+
+        public void Delete(int id)
         {
         }
     }
