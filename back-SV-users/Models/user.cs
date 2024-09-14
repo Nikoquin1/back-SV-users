@@ -7,7 +7,7 @@ namespace Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Column("id")]
+        [Column("")]
         public int Id { get; set; }
 
         [Required]
