@@ -22,11 +22,7 @@ public class UsersController : ControllerBase
     public IActionResult GetUsers()
     {
         // Filtra los usuarios asegurando que los campos Name y Email no sean nulos, vacíos ni compuestos solo de espacios
-        var users = _context.Users
-            .Where(u => !string.IsNullOrEmpty(u.Name) && !string.IsNullOrWhiteSpace(u.Name) &&
-                        !string.IsNullOrEmpty(u.Email) && !string.IsNullOrWhiteSpace(u.Email))
-            .ToList();  // Trae los resultados después de aplicar los filtros
-
+        var users = _context.Users;
         return Ok(users);
     }
 

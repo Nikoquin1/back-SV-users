@@ -8,13 +8,13 @@ namespace Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Column("")]
+        [Column("id")]
         public int Id { get; set; }
 
         [Required]
         [Column("name")]
         public required string Name { get; set; }
 
-        public required ICollection<User> Users { get; set; }
+       // public required ICollection<User> Users { get; set; }
     }
 }
