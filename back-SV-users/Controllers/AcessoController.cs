@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Custom;
 using DTO;
 
-[Route("api/[controller]")]
+[Route("/user")]
 [AllowAnonymous]
 [ApiController]
 public class UsersController : ControllerBase
@@ -93,7 +93,7 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpPost("change-password")]
+    [HttpPost("password")]
     public IActionResult ChangePassword([FromBody] PasswordChangeDTO model)
     {
         // Find user by email
