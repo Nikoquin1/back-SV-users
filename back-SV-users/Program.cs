@@ -8,17 +8,16 @@ using back_SV_users.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configura el logging para capturar mensajes detallados
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
-builder.Logging.AddDebug();  // Añade el log de depuración
+builder.Logging.AddDebug();  
 
 builder.Host.ConfigureLogging(logging =>
 {
     logging.ClearProviders();
     logging.AddConsole();
     logging.AddDebug();
-    logging.SetMinimumLevel(LogLevel.Debug);  // Ajusta el nivel mínimo de logs a Debug para más detalles
+    logging.SetMinimumLevel(LogLevel.Debug);  
 });
 
 // Add services to the container.
@@ -52,8 +51,8 @@ Console.WriteLine($"Connection String: {connectionString}");
 builder.Services.AddDbContext<DatabaseContext>(options =>
 {
     options.UseNpgsql(connectionString)
-           .EnableSensitiveDataLogging()  // Mostrar datos sensibles en los logs
-           .LogTo(Console.WriteLine, LogLevel.Debug); // Mostrar logs detallados en consola con nivel Debug
+           .EnableSensitiveDataLogging()  
+           .LogTo(Console.WriteLine, LogLevel.Debug); 
 });
 
 builder.Services.AddSingleton<Utilities>();
@@ -66,7 +65,6 @@ if (string.IsNullOrEmpty(key))
     throw new Exception("JWT Key is not set correctly in the configuration.");
 }
 
-// Si los problemas persisten, comenta la configuración de autenticación JWT para reducir la complejidad temporalmente
  builder.Services.AddAuthentication(config =>
  {
     config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

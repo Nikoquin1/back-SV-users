@@ -7,5 +7,5 @@
     public required string Logo { get; set; }
     public int NIT { get; set; }
     public required string Description { get; set; }
-    public required string UserName { get; set; } // Para mostrar el nombre del usuario propietario
+    public required string UserName { get; set; } 
 }

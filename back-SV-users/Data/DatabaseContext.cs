@@ -18,8 +18,8 @@ namespace back_SV_users.Data
             {
                 entity.ToTable("user", schema: "innovatech");
                 entity.Property(u => u.Name)
-                      .IsRequired() // Marca el campo como obligatorio
-                      .HasMaxLength(100); // Define un tamaño máximo si es necesario
+                      .IsRequired() 
+                      .HasMaxLength(100);
 
                 entity.Property(u => u.Email)
                       .IsRequired()

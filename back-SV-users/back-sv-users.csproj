@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>back-_sv_-users</RootNamespace> <!-- Asegúrate que coincida con tus clases -->
+    <RootNamespace>back-_sv_-users</RootNamespace> 
   </PropertyGroup>
 
   <ItemGroup>
