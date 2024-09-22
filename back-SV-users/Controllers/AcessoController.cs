@@ -8,8 +8,6 @@ using Npgsql;
 using Microsoft.AspNetCore.Authorization;
 using Custom;
 using DTO;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.Internal;
-
 
 [Route("api/[controller]")]
 [AllowAnonymous]
@@ -18,11 +16,13 @@ public class UsersController : ControllerBase
 {
     private readonly DatabaseContext _context;
     private readonly Utilities _utilities;
+    private readonly EmailService _emailService;
 
-    public UsersController(DatabaseContext context, Utilities utilities)
+    public UsersController(DatabaseContext context, Utilities utilities, EmailService emailService)
     {
         _context = context;
         _utilities = utilities;
+        _emailService = emailService;
     }
 
     [HttpPost]
@@ -34,7 +34,6 @@ public class UsersController : ControllerBase
             return BadRequest("User data is required.");
         }
 
-        // Buscar el RoleId basado en el RoleName proporcionado
         var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == user.RoleName);
         if (role == null)
         {
@@ -47,14 +46,13 @@ public class UsersController : ControllerBase
             Name = user.Name,
             Email = user.Email,
             Password = _utilities.encriptarSHA256(user.Password),
-            RoleId = role.Id  // Asignar el RoleId encontrado
+            RoleId = role.Id
         };
 
         try
         {
             await _context.Users.AddAsync(modelUser);
             await _context.SaveChangesAsync();
-
             return Ok(new { isSuccess = true });
         }
         catch (DbUpdateException dbEx)
@@ -68,9 +66,6 @@ public class UsersController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
-
-
-
 
     [HttpPost]
     [Route("Login")]
@@ -89,32 +84,53 @@ public class UsersController : ControllerBase
 
         if (userFind == null)
         {
-            // Usuario no encontrado o credenciales incorrectas
             return StatusCode(StatusCodes.Status200OK, new { isSuccess = false, token = "" });
         }
         else
         {
-            // Usuario encontrado, generamos el token
             var token = _utilities.generateJWT(userFind);
             return StatusCode(StatusCodes.Status200OK, new { isSuccess = true, token = token });
         }
     }
 
+    [HttpPost("change-password")]
+    public IActionResult ChangePassword([FromBody] PasswordChangeDTO model)
+    {
+        // Find user by email
+        var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
 
-    // Endpoint para listar todos los usuarios
+        // Verify old password
+        if (user.Password != _utilities.encriptarSHA256(model.OldPassword))
+        {
+            return BadRequest("Old password is incorrect.");
+        }
+
+        // Update password
+        user.Password = _utilities.encriptarSHA256(model.NewPassword);
+        _context.SaveChanges();
+
+        // Send confirmation email
+        _emailService.SendPasswordChangedConfirmation(user.Email);
+
+        return Ok("Password updated successfully.");
+    }
+
+
     [HttpGet]
     public IActionResult GetUsers()
     {
-        // Filtra los usuarios asegurando que los campos Name y Email no sean nulos, vacíos ni compuestos solo de espacios
         var users = _context.Users
             .Where(u => !string.IsNullOrEmpty(u.Name) && !string.IsNullOrWhiteSpace(u.Name) &&
                         !string.IsNullOrEmpty(u.Email) && !string.IsNullOrWhiteSpace(u.Email))
-            .ToList();  // Trae los resultados después de aplicar los filtros
+            .ToList();
 
         return Ok(users);
     }
 
-    // Endpoint para agregar un usuario de prueba
     [HttpPost]
     public IActionResult AddUser()
     {
@@ -137,7 +153,6 @@ public class UsersController : ControllerBase
         {
             if (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
             {
-                // Manejo de excepciones específicas de PostgreSQL para duplicados
                 if (pgEx.ConstraintName.Contains("id_card"))
                 {
                     return BadRequest("Error: The card ID is already in use.");
@@ -147,13 +162,11 @@ public class UsersController : ControllerBase
                     return BadRequest("Error: The e-mail is already in use.");
                 }
             }
-            // Log del error para revisión
             Console.WriteLine($"Error: {ex.Message}");
             return StatusCode(500, $"Error saving the user: {ex.Message}");
         }
         catch (Exception ex)
         {
-            // Manejo general de excepciones
             Console.WriteLine($"Error: {ex.Message}");
             return StatusCode(500, "Error saving the user.");
         }
