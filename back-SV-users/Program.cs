@@ -57,6 +57,7 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
 });
 
 builder.Services.AddSingleton<Utilities>();
+builder.Services.AddScoped<EmailService>();
 
 // Validate JWT Key
 var key = builder.Configuration["Jwt:Key"];
@@ -103,5 +104,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.Run();
