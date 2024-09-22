@@ -69,6 +69,9 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [Route("Login")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(object))] 
+    [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))] 
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(string))] 
     public async Task<IActionResult> Login([FromBody] LoginDTO user)
     {
         if (user == null)
@@ -76,22 +79,36 @@ public class UsersController : ControllerBase
             return BadRequest("User data is required.");
         }
 
-        var userFind = await _context.Users
-            .Where(u =>
-                u.Email == user.Email &&
-                u.Password == _utilities.encriptarSHA256(user.Password)
-            ).FirstOrDefaultAsync();
+        try
+        {
+            var userFind = await _context.Users
+                .Where(u =>
+                    u.Email == user.Email &&
+                    u.Password == _utilities.encriptarSHA256(user.Password)
+                ).FirstOrDefaultAsync();
 
-        if (userFind == null)
-        {
-            return StatusCode(StatusCodes.Status200OK, new { isSuccess = false, token = "" });
+            if (userFind == null)
+            {
+                return NotFound("Wrong username or password");
+            }
+            else
+            {
+                var token = _utilities.generateJWT(userFind);
+                return Ok(new
+                {
+                    message = "user logged in successfully",
+                    token = token,
+                    userId = userFind.Id  
+                });
+            }
         }
-        else
+        catch (Exception ex)
         {
-            var token = _utilities.generateJWT(userFind);
-            return StatusCode(StatusCodes.Status200OK, new { isSuccess = true, token = token });
+            Console.WriteLine($"Internal server error: {ex.Message}");
+            return StatusCode(500, "internal server error");
         }
     }
+
 
     [HttpPost("password")]
     public IActionResult ChangePassword([FromBody] PasswordChangeDTO model)
