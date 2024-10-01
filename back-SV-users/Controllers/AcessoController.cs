@@ -18,6 +18,10 @@ public class UsersController : ControllerBase
     private readonly Utilities _utilities;
     private readonly EmailService _emailService;
 
+    private static string _recoveryCode;
+    private static string _recoveryEmail;
+
+
     public UsersController(DatabaseContext context, Utilities utilities, EmailService emailService)
     {
         _context = context;
@@ -93,31 +97,7 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpPost("change-password")]
-    public IActionResult ChangePassword([FromBody] PasswordChangeDTO model)
-    {
-        // Find user by email
-        var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
-        if (user == null)
-        {
-            return NotFound("User not found.");
-        }
-
-        // Verify old password
-        if (user.Password != _utilities.encriptarSHA256(model.OldPassword))
-        {
-            return BadRequest("Old password is incorrect.");
-        }
-
-        // Update password
-        user.Password = _utilities.encriptarSHA256(model.NewPassword);
-        _context.SaveChanges();
-
-        // Send confirmation email
-        _emailService.SendPasswordChangedConfirmation(user.Email);
-
-        return Ok("Password updated successfully.");
-    }
+    
 
 
     [HttpGet]
@@ -130,6 +110,66 @@ public class UsersController : ControllerBase
 
         return Ok(users);
     }
+
+
+
+    [HttpPost]
+    [Route("request-password-recovery")]
+    public async Task<IActionResult> RequestPasswordRecovery([FromBody] PasswordRecoveryEmailDTO model)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        // Genera un código aleatorio
+        _recoveryCode = Guid.NewGuid().ToString().Substring(0, 6);
+        _recoveryEmail = model.Email; // Almacena el correo para el siguiente paso
+
+        // Envía el código por correo
+        await _emailService.SendRecoveryCode(user.Email, _recoveryCode);
+
+        return Ok("Recovery code sent to email.");
+    }
+
+    [HttpPost("verify-code")]
+    public IActionResult VerifyRecoveryCode([FromBody] PasswordRecoveryCodeDTO model)
+    {
+        if (model.Code != _recoveryCode)
+        {
+            return BadRequest("Invalid recovery code.");
+        }
+
+        return Ok("Code verified. Proceed to set a new password.");
+    }
+
+    [HttpPost("set-new-password")]
+    public IActionResult SetNewPassword([FromBody] PasswordChangeDTO model)
+    {
+        // Verificar si las contraseñas coinciden
+        if (model.NewPassword != model.ConfirmNewPassword)
+        {
+            return BadRequest("Passwords do not match.");
+        }
+
+        // Obtener el usuario por correo
+        var user = _context.Users.FirstOrDefault(u => u.Email == _recoveryEmail);
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        // Actualizar la contraseña
+        user.Password = _utilities.encriptarSHA256(model.NewPassword);
+        _context.SaveChanges();
+
+        // Enviar un correo de confirmación de que la contraseña ha sido cambiada
+        _emailService.SendPasswordChangedConfirmation(user.Email);
+
+        return Ok("Password updated successfully.");
+    }
+
 
     [HttpPost]
     public IActionResult AddUser()

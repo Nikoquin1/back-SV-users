@@ -31,5 +31,25 @@ public class EmailService
 
         smtpClient.Send(mailMessage);
     }
+    public async Task SendRecoveryCode(string toEmail, string code)
+    {
+        var smtpClient = new SmtpClient(_configuration["Smtp:Host"])
+        {
+            Port = int.Parse(_configuration["Smtp:Port"]),
+            Credentials = new NetworkCredential(_configuration["Smtp:Username"], _configuration["Smtp:Password"]),
+            EnableSsl = bool.Parse(_configuration["Smtp:EnableSsl"])
+        };
+
+        var mailMessage = new MailMessage
+        {
+            From = new MailAddress(_configuration["Smtp:Username"]),
+            Subject = "Password Recovery Code",
+            Body = $"Your password recovery code is: {code}",
+            IsBodyHtml = true,
+        };
+        mailMessage.To.Add(toEmail);
+
+        await smtpClient.SendMailAsync(mailMessage);
+    }
 
 }
